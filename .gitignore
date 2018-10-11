@@ -1,0 +1,10 @@
+# Directories
+__pycache__/
+new_data/
+old_data/
+
+# Patterns files
+*.png
+
+# Files
+hi.py
