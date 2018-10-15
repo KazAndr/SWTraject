@@ -1,7 +1,7 @@
 # Directories
 .ipynb_checkpoints/
 __pycache__/
-new_data/
+#new_data/
 old_data/
 
 # Patterns files
