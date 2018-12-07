@@ -3,8 +3,14 @@
 __pycache__/
 new_data/
 old_data/
+gp_plot/
+hist_plot/
+obs_data/
+obs_plot/
+simma15/
 
 # Patterns files
+*.rar
 *.png
 
 # Files
