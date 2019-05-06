@@ -61,6 +61,10 @@ else:
 sys.path.append(PACK_DIR)
 from PRAO import *
 
+# Создание списка дат хороших дней
+list_files = sorted(glob.glob('./good_days/*'))
+date_list = [os.path.basename(i)[:10] for i in list_files]
+
 sessons_obs = pd.DataFrame(columns=[
     'Date',
     'Session'
@@ -84,81 +88,87 @@ for file_name in tqdm(main_set):
     try:
         head, main_pulse, data_pulses, back = read_profiles_MD(file_name)
 
-        non_cor_data = []
-        for pulse, backg in zip(data_pulses, back):
-            non_cor_data.append(pulse + backg)
-        obser = np.hstack(non_cor_data)
+        if head['date'] in date_list:
+            non_cor_data = []
+            for pulse, backg in zip(data_pulses, back):
+                non_cor_data.append(pulse + backg)
+            obser = np.hstack(non_cor_data)
 
-        diag = []
-        for x in np.linspace(-1.3, 1.4, len(obser) + int(head['numpointwin'])):
-            if x == 0:
-                diag.append(1)
-            else:
-                diag.append((np.sin(x)/x)**2)
+            def func(x, Aml, b):
+                return Aml*((np.sin(x/b)/(x/b))**2)
 
-        cor_d = []
-        for data_point, coeff in zip(obser, diag):
-            cor_d.append(data_point/coeff)
-        cor_d = np.asarray(cor_d)
+            # Создание корректных значений для оси OX
+            xdata = range(-17*int(head['numpointwin']), 16*int(head['numpointwin']))
+            xfunc = np.linspace(-1.2, 1.1, len(obser))
+            y_val = func(xfunc, 1, 1)
+            index_aver = int(len(obser)/2)
+            Ampl = np.median(obser[index_aver - 100:index_aver + 100])
+            norm_coef = -17*int(head['numpointwin'])/-1.2
+            normed_xval = [i/norm_coef for i in xdata]
 
-        clr = flatter(cor_d, 13)
-        flat_obser = (cor_d - clr) + 1720 # Калибровка
-        med_flat_obser = np.median(flat_obser)
-        std_flat_obser = np.std(flat_obser)
+            cor_d = []
+            for data_point, coeff in zip(obser, y_val):
+                cor_d.append(data_point/coeff)
+            cor_d = np.asarray(cor_d)
+
+            clr = flatter(cor_d, 13)
+            flat_obser = (cor_d - clr) + 1720 # Калибровка
+            med_flat_obser = np.median(flat_obser)
+            std_flat_obser = np.std(flat_obser)
 
 
-        #  writing session of observation
-        fName = './obs_data/' + head['date'] + '_obs_' + head['name'] + '.csv'
-        head_file = (
-            'name ' + head['name'] + '\n'
-            + 'date ' + head['date'] + '\n'
-            + 'time ' + head['time'] + '\n'
-            + 'period ' + head['period'] + '\n'
-            + 'numpuls ' + head['numpuls'] + '\n'
-            + 'tay ' + head['tay'] + '\n'
-            + 'numpointwin ' + str(int(head["l_point_win"]) + 1) + '\n')
+            #  writing session of observation
+            fName = './obs_data/' + head['date'] + '_obs_' + head['name'] + '.csv'
+            head_file = (
+                'name ' + head['name'] + '\n'
+                + 'date ' + head['date'] + '\n'
+                + 'time ' + head['time'] + '\n'
+                + 'period ' + head['period'] + '\n'
+                + 'numpuls ' + head['numpuls'] + '\n'
+                + 'tay ' + head['tay'] + '\n'
+                + 'numpointwin ' + str(int(head["l_point_win"]) + 1) + '\n')
 
-        np.savetxt(
-            fName,
-            flat_obser,
-            fmt='%1.5f',
-            delimiter='\t',
-            newline='\n',
-            header=head_file,
-            comments='')
+            np.savetxt(
+                fName,
+                flat_obser,
+                fmt='%1.5f',
+                delimiter='\t',
+                newline='\n',
+                header=head_file,
+                comments='')
 
-        fName_plot =  './obs_plot/' + head['date'] + '_plot_'+ head['name'] + '.png'
+            fName_plot =  './obs_plot/' + head['date'] + '_plot_'+ head['name'] + '.png'
 
-        plt.close()
-        plt.subplot(311)
-        plt.plot(obser)
-        plt.subplot(312)
-        plt.plot(cor_d)
-        plt.plot(clr, color='r')
-        plt.subplot(313)
-        plt.plot(flat_obser) #[24150:24300]
-        plt.axhline(med_flat_obser, color='r')
-        plt.axhline(1800, color='red')
-        plt.axhline(med_flat_obser - 3*std_flat_obser, color='red')
-        plt.savefig(fName_plot, format='png', dpi=100)
+            plt.close()
+            plt.subplot(311)
+            plt.plot(normed_xval, obser)
+            plt.plot(xfunc, y_val*Ampl)
+            plt.subplot(312)
+            plt.plot(cor_d)
+            plt.plot(clr, color='r')
+            plt.subplot(313)
+            plt.plot(flat_obser) #[24150:24300]
+            plt.axhline(med_flat_obser, color='r')
+            plt.axhline(med_flat_obser - 3*std_flat_obser, color='red')
+            plt.savefig(fName_plot, format='png', dpi=100)
 
-        fName_hist =  './hist_plot/' + head['date'] + '_hist_'+ head['name'] + '.png'
-        bins = np.linspace(np.min(flat_obser), np.max(flat_obser), 1000)
-        plt.close()
-        plt.title('Distribution of pulses of Crab observation in ' + head['date'])
-        plt.xlabel('Flux density, ADC units')
-        plt.ylabel('Number of pulses')
-        plt.hist(flat_obser, bins)
-        plt.axvline(med_flat_obser, color='r')
-        plt.axvline(1800, color='red')
-        plt.axvline(med_flat_obser - 3*std_flat_obser, color='red')
-        plt.savefig(fName_hist, format='png', dpi=100)
+            fName_hist =  './hist_plot/' + head['date'] + '_hist_'+ head['name'] + '.png'
+            bins = np.linspace(np.min(flat_obser), np.max(flat_obser), 1000)
+            plt.close()
+            plt.title('Distribution of pulses of Crab observation in ' + head['date'])
+            plt.xlabel('Flux density, ADC units')
+            plt.ylabel('Number of pulses')
+            plt.hist(flat_obser, bins)
+            plt.axvline(med_flat_obser, color='r')
+            plt.axvline(1800, color='red')
+            plt.axvline(med_flat_obser - 3*std_flat_obser, color='red')
+            plt.savefig(fName_hist, format='png', dpi=100)
 
-        sessons_obs.loc[idx_obs] = [
-                head['date'],
-                1
-            ]
-        idx_obs += 1
+            sessons_obs.loc[idx_obs] = [
+                    head['date'],
+                    1
+                ]
+            idx_obs += 1
 
     except ValueError:
         with open('valerr_' + 'crab' + '.log', 'a') as f:
