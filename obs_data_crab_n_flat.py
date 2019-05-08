@@ -125,7 +125,7 @@ for file_name in tqdm(main_set):
             # plt.axhline(med_flat_obser - 3*std_flat_obser, color='red')
             plt.savefig(fName_plot, format='png', dpi=100)
 
-            """
+
             fName_hist =  './hist_plot/' + head['date'] + '_hist_'+ head['name'] + '.png'
             bins = np.linspace(np.min(flat_obser), np.max(flat_obser), 1000)
             plt.close()
@@ -135,11 +135,11 @@ for file_name in tqdm(main_set):
             plt.hist(flat_obser, bins)
             plt.axvline(med_flat_obser, color='r')
             plt.axvline(1800, color='red')
-            plt.axvline(med_flat_obser - 3*std_flat_obser, color='red')
+            # plt.axvline(med_flat_obser - 3*std_flat_obser, color='red')
             plt.savefig(fName_hist, format='png', dpi=100)
-            """
 
-            """
+
+
             fName = './obs_data/' + head['date'] + '_obs_' + head['name'] + '.csv'
             head_file = (
                 'name ' + head['name'] + '\n'
@@ -158,7 +158,7 @@ for file_name in tqdm(main_set):
                 newline='\n',
                 header=head_file,
                 comments='')
-            """
+
 
             sessons_obs.loc[idx_obs] = [
                     head['date'],

@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 
 from tqdm import tqdm
+from scipy import signal
 
 if 'Windows' in platform.platform() and '8.1' in platform.release():
     _ = "C:\\Users\\Andrey\\YandexDisk\\3.Programing\\"
@@ -61,6 +62,7 @@ gp_crab = pd.DataFrame(columns=[
     'Count of GP, u',
     'point of gp, point',
     'amp of gp, adc u',
+    'amp of gp, snr',
     'W50, point',
     'W10, point',
     'path plot',
@@ -83,18 +85,12 @@ def read_head(filename, numpar):
                 header[a] = b[0].replace(',', '.')
     return header
 
-gp_pat = np.loadtxt(
-            PATTERN_DIR
-            + os.sep
-            + 'GP_0531+21_2.4576'
-            + '.csv',  skiprows=4)
 
 idx = 0
 for name in tqdm(files_0531):
     head = read_head(name, 7)
     flat_obs = np.genfromtxt(name, skip_header=7)
 
-    med_flux_no_calib = np.median(flat_obs)
     test_flat_obser = deepcopy(flat_obs)
     med_flux = np.median(test_flat_obser)
     std_obs = np.std(test_flat_obser)
@@ -129,7 +125,7 @@ for name in tqdm(files_0531):
     fName_plot =  './obs_plot/' + head['date'] + '_plot_'+ head['name'] + '.png'
     i = 0
 
-    while np.max(test_flat_obser) >= 1800:
+    while np.max(test_flat_obser) >= med_flux + 5*std_obs:
         x_max = np.argmax(test_flat_obser)
         pulse = test_flat_obser[x_max - 10: x_max + 90] - med_flux
 
@@ -147,12 +143,13 @@ for name in tqdm(files_0531):
         plt.plot(pulse)
         plt.savefig(path_pulse, format='png', dpi=100)
 
-        i += 1
-        
-        w10, _, _ =  width_of_pulse(pulse, 0.1)
-        w50, _, _ = width_of_pulse(pulse, 0.5)
+
+        smoothed_pulse = signal.savgol_filter(pulse, 5, 3)
+        w10, _, _ =  width_of_pulse(smoothed_pulse, 0.1)
+        w50, _, _ = width_of_pulse(smoothed_pulse, 0.5)
 
         amp = max(pulse)
+        amp_snr = max(pulse)/std_obs
         medias = np.full(len(pulse), med_flux)
         test_flat_obser[x_max - 10: x_max + 90] = medias
 
@@ -172,20 +169,20 @@ for name in tqdm(files_0531):
             1,
             x_max,
             amp,
+            amp_snr,
             w50,
             w10,
             path_pulse,
             fName,
         ]
 
-
-        fName = './gp_plot_txt/' + head['date'] + '_plot_'+ head['name'] + '_'+ str(i)  + '.csv'
         head_file = 'name ' + head['name'] + '\n' + \
         'numpuls ' + str(1) + '\n' + \
         'tay ' + head['tay'] + '\n' + \
         'flux\n\n' # Добавление подписей колонок
 
         np.savetxt(fName, pulse, fmt='%1.3f', newline='\n', header=head_file, comments='')
+        i += 1
         idx += 1
 
-gp_crab.to_csv('crab_gp_kaz_10_2010-2018_calib.csv',  sep='\t', header=True, index=False)
+gp_crab.to_csv('crab_gp_kaz_10_2010-2018_calib_sigma.csv',  sep='\t', header=True, index=False)
