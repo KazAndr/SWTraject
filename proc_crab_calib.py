@@ -155,6 +155,7 @@ for name in tqdm(files_0531):
         except ValueError:
             w10 = 0
             w50 = 0
+            test_flat_obser[x_max] = 0
 
         amp = max(pulse)
         medias = np.full(len(pulse), med_flux)
