@@ -148,9 +148,13 @@ for name in tqdm(files_0531):
         plt.savefig(path_pulse, format='png', dpi=100)
 
         i += 1
-        
-        w10, _, _ =  width_of_pulse(pulse, 0.1)
-        w50, _, _ = width_of_pulse(pulse, 0.5)
+
+        try:
+            w10, _, _ =  width_of_pulse(pulse, 0.1)
+            w50, _, _ = width_of_pulse(pulse, 0.5)
+        except ValueError:
+            w10 = 0
+            w50 = 0
 
         amp = max(pulse)
         medias = np.full(len(pulse), med_flux)
