@@ -57,7 +57,7 @@ files_0531 = glob.glob(ALL_DATA + '0531+21'
 print('Main object: 0531+21; Numbers of files: ' + str(len(files_0531)))
 
 # установка диапазона дат
-date_start = datetime.datetime(2008, 11, 17, 0, 0)
+date_start = datetime.datetime(2018, 11, 20, 0, 0)
 data_stop = datetime.datetime(2019, 11, 18, 0, 0)
 
 main_set = [x for x in files_0531

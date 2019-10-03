@@ -188,4 +188,4 @@ for name in tqdm(files_0531):
         np.savetxt(fName, pulse, fmt='%1.3f', newline='\n', header=head_file, comments='')
         idx += 1
 
-gp_crab.to_csv('crab_gp_kaz_10_2010-2018_calib.csv',  sep='\t', header=True, index=False)
+gp_crab.to_csv('crab_gp_kaz_10_2018-2019_calib.csv',  sep='\t', header=True, index=False)
