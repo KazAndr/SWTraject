@@ -1,6 +1,7 @@
 import os
 import sys
 import glob
+import datetime
 from copy import deepcopy
 import datetime
 import platform
@@ -87,7 +88,7 @@ sessons_obs = pd.DataFrame(columns=[
 ])
 
 files_0531 = sorted(
-    glob.glob('./final_dataset/' + os.sep + 'obs_data' + os.sep + '*'),
+    glob.glob('./final_dataset/' + os.sep + 'obs_data_real_calib' + os.sep + '*'),
     key=lambda x: datetime.datetime.strptime(os.path.basename(x), '%d.%m.%Y_obs_0531+21.csv'))
 
 idx = 0
@@ -107,7 +108,7 @@ for name in tqdm(files_0531):
     
     i = 0
 
-    while np.max(test_flat_obser) >= 1730:
+    while np.max(test_flat_obser) >= 1820:
         x_max = np.argmax(test_flat_obser)
         pulse = test_flat_obser[x_max - 25: x_max + 125] - med_flux
         if len(pulse) == 0:
@@ -123,7 +124,7 @@ for name in tqdm(files_0531):
         NN_decition = loaded_model.predict([n_pulse])
         if NN_decition[0] == 1:
 
-            path_pulse = f'./final_dataset/gp_plot/' + head['date'] + '_plot_'+ head['name'] + '_'+ str(i)  + '.png'
+            path_pulse = f'./final_dataset/gp_plot_real_calib/' + head['date'] + '_plot_'+ head['name'] + '_'+ str(i)  + '.png'
             plt.close()
             plt.title(
                     'Session of observation of Crab in '
@@ -146,7 +147,7 @@ for name in tqdm(files_0531):
             medias = np.full(len(pulse), med_flux)
             test_flat_obser[x_max - 25: x_max + 125] = medias
 
-            fName = './final_dataset/gp_plot_txt/' + head['date'] + '_plot_'+ head['name'] + '_'+ str(i)  + '.csv'
+            fName = './final_dataset/gp_plot_txt_real_calib/' + head['date'] + '_plot_'+ head['name'] + '_'+ str(i)  + '.csv'
 
             gp_crab.loc[idx] = [
                 head['date'],
@@ -178,5 +179,6 @@ for name in tqdm(files_0531):
             medias = np.full(len(pulse), med_flux)
             test_flat_obser[x_max - 25: x_max + 125] = medias
 
-gp_crab.to_csv('crab_gp_kaz_10_2010-2019_calib_dina.csv',  sep='\t', header=True, index=False)
-sessons_obs.to_csv('crab_obs_kaz_2010-2019_dina.csv',  sep='\t', header=True, index=False)
+now = datetime.datetime.now().strftime("%Y-%m-%d")
+gp_crab.to_csv(f'crab_gp_kaz_10_2010-2019_calib_dina_{now}.csv',  sep='\t', header=True, index=False)
+sessons_obs.to_csv(f'crab_obs_kaz_2010-2019_dina_{now}.csv',  sep='\t', header=True, index=False)
