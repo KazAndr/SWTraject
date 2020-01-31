@@ -157,14 +157,19 @@ for file_name in tqdm(main_set):
 
             plt.close()
             plt.subplot(311)
+            plt.title(f'{year}.{month}.{day}')
             plt.plot(obser)
             plt.plot(beam_coeff)
+            plt.ylabel('Intensity, ADC units')
             plt.subplot(312)
             plt.plot(cor_d)
             plt.plot(poli_13, color='r')
+            plt.ylabel('Intensity, Jy')
             plt.subplot(313)
             plt.plot(flat_obser) #[24150:24300]
             plt.axhline(med_flat_obser, color='r')
+            plt.ylabel('Intensity, Jy')
+            plt.xlabel(f"N points, dt = {head['tay']}")
             # plt.axhline(med_flat_obser - 3*std_flat_obser, color='red')
             plt.savefig(fName_plot, format='png', dpi=100)
 
