@@ -42,14 +42,12 @@ if 'Windows' in platform.platform() and '8.1' in platform.release():
     DATA_DIR = _ + "work\\PulseViewer\\pulsarsData\\"
     PATTERN_DIR = _ + "work\\PulseViewer\\frame_of_AP\\patterns\\"
     PACK_DIR = _ + "myPacks\\"
-    DELIMITER = "\\"
 
 elif 'Windows' in platform.platform() and '7' in platform.release():
     _ = "E:\\Disk.Yandex\\3.Programing\\"
     DATA_DIR = "work\\PulseViewer\\pulsarsData\\"
     PATTERN_DIR = _ + "work\\PulseViewer\\frame_of_AP\\patterns\\"
     PACK_DIR = _ + "myPacks\\"
-    DELIMITER = "\\"
 
 elif 'Windows' in platform.platform() and '10' in platform.release():
     _ = "F:\\YandexDisk\\3.Programing\\"
@@ -57,7 +55,6 @@ elif 'Windows' in platform.platform() and '10' in platform.release():
     PATTERN_DIR = _ + "work\\PulseViewer\\frame_of_AP\\patterns\\"
     PACK_DIR = _ + "myPacks\\"
     ALL_DATA = "F:\\YandexDisk\\1.Работа\\Результаты обработки\\"
-    DELIMITER = "\\"
 
 elif 'Linux' in platform.platform() and '4.4.0' in platform.release():
     _ = "/home/andr/Yandex.Disk/3.Programing/"
@@ -65,7 +62,6 @@ elif 'Linux' in platform.platform() and '4.4.0' in platform.release():
     PATTERN_DIR = _ + "/work/PulseViewer/frame_of_AP/patterns/"
     PACK_DIR = _ + "myPacks/"
     ALL_DATA = "/home/andr/Yandex.Disk/1.Работа/Результаты обработки/"
-    DELIMITER = "/"
 
 else:
     print('unknown system', platform.platform(), platform.release())
@@ -90,10 +86,8 @@ beam_coeff_table = pd.DataFrame(columns=[
     'Jy/ADC'
 ])
 
-files_0531 = glob.glob(ALL_DATA + '0531+21'
-                       + DELIMITER + '*' + DELIMITER + '*' + DELIMITER
-                       + '*_profiles.txt')
-print('Main object: 0531+21; Numbers of files: ' + str(len(files_0531)))
+files_0531 = glob.glob(f'{ALL_DATA}0531+21{os.sep}*{os.sep}*{os.sep}*_profiles.txt')
+print(f'Main object: 0531+21; Numbers of files: {len(files_0531)}')
 
 # установка диапазона дат
 date_start = datetime.datetime(2009, 11, 20, 0, 0)
@@ -101,7 +95,7 @@ data_stop = datetime.datetime(2019, 11, 18, 0, 0)
 
 main_set = [x for x in files_0531
              if date_start <= datetime.datetime.strptime(os.path.basename(x)[:6], '%d%m%y') <= data_stop]
-print('Main set: 0531+21; Numbers of files: ' + str(len(main_set)))
+print(f'Main set: 0531+21; Numbers of files: {len(main_set)}')
 
 idx_obs = 0
 for file_name in tqdm(main_set):
@@ -109,7 +103,9 @@ for file_name in tqdm(main_set):
         head, main_pulse, data_pulses, back = read_profiles_MD(file_name)
 
         if head['date'] in date_list:
-
+            
+            day, month, year = head['date'].split('.')
+            
             non_cor_data = []
             for pulse, backg in zip(data_pulses, back):
                 non_cor_data.append(pulse + backg)
@@ -157,7 +153,7 @@ for file_name in tqdm(main_set):
 
             #  writing session of observation
 
-            fName_plot =  './obs_plot_real_calib/' + head['date'] + '_plot_'+ head['name'] + '.png'
+            fName_plot =  f'./obs_plot_real_calib/{year}.{month}.{day}_plot_{head["name"]}.png'
 
             plt.close()
             plt.subplot(311)
@@ -172,15 +168,15 @@ for file_name in tqdm(main_set):
             # plt.axhline(med_flat_obser - 3*std_flat_obser, color='red')
             plt.savefig(fName_plot, format='png', dpi=100)
 
-            fName = './obs_data_real_calib/' + head['date'] + '_obs_' + head['name'] + '.csv'
+            fName = f'./obs_data_real_calib/{year}.{month}.{day}_obs_{head["name"]}.csv'
             head_file = (
-                'name ' + head['name'] + '\n'
-                + 'date ' + head['date'] + '\n'
-                + 'time ' + head['time'] + '\n'
-                + 'period ' + head['period'] + '\n'
-                + 'numpuls ' + head['numpuls'] + '\n'
-                + 'tay ' + head['tay'] + '\n'
-                + 'numpointwin ' + str(int(head["l_point_win"]) + 1) + '\n')
+                f'name {head["name"]}'\n'
+                f'date {head["date"]}'\n'
+                f'time {head["time"]}'\n'
+                f'period {head["period"]}'\n'
+                f'numpuls {head["numpuls"]}'\n'
+                f'tay {head["tay"]}'\n'
+                f'numpointwin {int(head["l_point_win"]) + 1}'\n')
 
             np.savetxt(
                 fName,
@@ -198,11 +194,11 @@ for file_name in tqdm(main_set):
             idx_obs += 1
 
     except ValueError:
-        with open('valerr_' + 'crab' + '.log', 'a') as f:
+        with open('valerr_crab.log', 'a') as f:
             f.write(os.path.basename(file_name))
             f.write('\n')
     except OSError:
-        with open('oserr_' + 'crab' + '.log', 'a') as f:
+        with open('oserr_crab.log', 'a') as f:
             f.write(os.path.basename(file_name))
             f.write('\n')
 
