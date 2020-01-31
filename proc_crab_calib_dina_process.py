@@ -13,6 +13,7 @@ import pandas as pd
 from tqdm import tqdm
 from sklearn.externals import joblib
 
+
 if 'Windows' in platform.platform() and '8.1' in platform.release():
     _ = "C:\\Users\\Andrey\\YandexDisk\\3.Programing\\"
     DATA_DIR = _ + "work\\PulseViewer\\pulsarsData\\"
@@ -42,10 +43,13 @@ elif 'Linux' in platform.platform() and '4.4.0' in platform.release():
 else:
     print('unknown system', platform.platform(), platform.release())
 
+
 sys.path.append(PACK_DIR)
 from PRAO import *
 
+
 loaded_model = joblib.load('dina_model_RFC(1000)_pulse_noise_95.sav')
+
 
 def read_head(filename, numpar):
     header = {}
@@ -57,6 +61,7 @@ def read_head(filename, numpar):
             except IndexError:
                 header[a] = b[0].replace(',', '.')
     return header
+
 
 gp_crab = pd.DataFrame(columns=[
     'Date',
@@ -85,14 +90,16 @@ sessons_obs = pd.DataFrame(columns=[
 
 files_0531 = sorted(
     glob.glob(f'.{os.sep}obs_data_real_calib{os.sep}*'),
-    key=lambda x: datetime.datetime.strptime(os.path.basename(x), '%Y.%m.%d._obs_0531+21.csv'))
+    key=lambda x: datetime.datetime.strptime(os.path.basename(x),
+                                             '%Y.%m.%d._obs_0531+21.csv')
+)
 
 idx = 0
 for name in tqdm(files_0531):
     head = read_head(name, 7)
     flat_obs = np.genfromtxt(name, skip_header=7)
     day, month, year = data.split('.')
-    
+
     sessons_obs.loc[idx] = [
         head['date'],
         1
@@ -102,7 +109,7 @@ for name in tqdm(files_0531):
     test_flat_obser = deepcopy(flat_obs)
     med_flux = np.median(test_flat_obser)
     std_obs = np.std(test_flat_obser)
-    
+
     i = 0
 
     while np.max(test_flat_obser) >= 1820:
@@ -122,7 +129,8 @@ for name in tqdm(files_0531):
         if NN_decition[0] == 1:
 
             path_pulse = (
-                f'./final_dataset/gp_plot_real_calib/{year}.{month}.{day}_plot_{head["name"]}_{i}.png'
+                f'./final_dataset/gp_plot_real_calib/'
+                f'{year}.{month}.{day}_plot_{head["name"]}_{i}.png'
             )
             plt.close()
             plt.title(f'Session of observation of Crab in {head["date"]} №{i}')
@@ -133,15 +141,16 @@ for name in tqdm(files_0531):
 
             i += 1
 
-            w10, _, _ =  width_of_pulse(pulse, 0.1)
+            w10, _, _ = width_of_pulse(pulse, 0.1)
             w50, _, _ = width_of_pulse(pulse, 0.5)
 
             amp = max(pulse)
             medias = np.full(len(pulse), med_flux)
-            test_flat_obser[x_max - 25: x_max + 125] = medias
+            test_flat_obser[x_max - 25:x_max + 125] = medias
 
             fName = (
-                f'./final_dataset/gp_plot_txt_real_calib/{year}.{month}.{day}_plot_{head["name"]}_{i}.csv'
+                f'./final_dataset/gp_plot_txt_real_calib/'
+                f'{year}.{month}.{day}_plot_{head["name"]}_{i}.csv'
             )
 
             gp_crab.loc[idx] = [
@@ -168,14 +177,17 @@ for name in tqdm(files_0531):
                 f'numpuls {i}\n'
                 f'tay {head["tay"]}\n'
                 f'flux\n\n'
-            ) # Добавление подписей колонок
+            )  # Добавление подписей колонок
 
-            np.savetxt(fName, pulse, fmt='%1.3f', newline='\n', header=head_file, comments='')
+            np.savetxt(fName, pulse, fmt='%1.3f',
+                       newline='\n', header=head_file, comments='')
             idx += 1
         else:
             medias = np.full(len(pulse), med_flux)
             test_flat_obser[x_max - 25: x_max + 125] = medias
 
 now = datetime.datetime.now().strftime("%Y-%m-%d")
-gp_crab.to_csv(f'crab_gp_kaz_10_2010-2019_calib_dina_{now}.csv',  sep='\t', header=True, index=False)
-sessons_obs.to_csv(f'crab_obs_kaz_2010-2019_dina_{now}.csv',  sep='\t', header=True, index=False)
+gp_crab.to_csv(f'crab_gp_kaz_10_2010-2019_calib_dina_{now}.csv',
+               sep='\t', header=True, index=False)
+sessons_obs.to_csv(f'crab_obs_kaz_2010-2019_dina_{now}.csv',
+                   sep='\t', header=True, index=False)
