@@ -130,7 +130,7 @@ for name in tqdm(files_0531):
                     + str(i))
 
             plt.xlabel('Number of point, dt = ' + head['tay']  + ' ' + 'ms')
-            plt.ylabel('Flux density, ADC units')
+            plt.ylabel('Flux density, Jy')
             plt.plot(pulse)
             plt.savefig(path_pulse, format='png', dpi=50)
 
