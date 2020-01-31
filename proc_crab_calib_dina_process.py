@@ -96,7 +96,7 @@ sessons_obs = pd.DataFrame(columns=[
 files_0531 = sorted(
     glob.glob(f'.{os.sep}obs_data_real_calib{os.sep}*'),
     key=lambda x: datetime.datetime.strptime(os.path.basename(x),
-                                             '%Y.%m.%d._obs_0531+21.csv')
+                                             '%Y.%m.%d_obs_0531+21.csv')
 )
 
 idx = 0
@@ -120,7 +120,7 @@ for name in tqdm(files_0531):
     while np.max(test_flat_obser) >= 1820:
         x_max = np.argmax(test_flat_obser)
         pulse = test_flat_obser[x_max - 25: x_max + 125] - med_flux
-        if not pulse:
+        if len(pulse) == 0:
             break
 
         n_pulse = pulse/max(pulse)
