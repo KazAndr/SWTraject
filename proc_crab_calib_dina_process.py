@@ -121,16 +121,12 @@ for name in tqdm(files_0531):
         NN_decition = loaded_model.predict([n_pulse])
         if NN_decition[0] == 1:
 
-            path_pulse = f'./final_dataset/gp_plot_real_calib/' + head['date'] + '_plot_'+ head['name'] + '_'+ str(i)  + '.png'
+            path_pulse = (
+                f'./final_dataset/gp_plot_real_calib/{year}.{month}.{day}_plot_{head["name"]}_{i}.png'
+            )
             plt.close()
-            plt.title(
-                    'Session of observation of Crab in '
-                    + head['date']
-                    + ' '
-                    + '№'
-                    + str(i))
-
-            plt.xlabel('Number of point, dt = ' + head['tay']  + ' ' + 'ms')
+            plt.title(f'Session of observation of Crab in {head["date"]} №{i}')
+            plt.xlabel(f'Number of point, dt = {head["tay"]} ms')
             plt.ylabel('Flux density, Jy')
             plt.plot(pulse)
             plt.savefig(path_pulse, format='png', dpi=50)
@@ -144,7 +140,9 @@ for name in tqdm(files_0531):
             medias = np.full(len(pulse), med_flux)
             test_flat_obser[x_max - 25: x_max + 125] = medias
 
-            fName = './final_dataset/gp_plot_txt_real_calib/' + head['date'] + '_plot_'+ head['name'] + '_'+ str(i)  + '.csv'
+            fName = (
+                f'./final_dataset/gp_plot_txt_real_calib/{year}.{month}.{day}_plot_{head["name"]}_{i}.csv'
+            )
 
             gp_crab.loc[idx] = [
                 head['date'],
@@ -165,10 +163,12 @@ for name in tqdm(files_0531):
                 fName,
             ]
 
-            head_file = 'name ' + head['name'] + '\n' + \
-            'numpuls ' + str(1) + '\n' + \
-            'tay ' + head['tay'] + '\n' + \
-            'flux\n\n' # Добавление подписей колонок
+            head_file = (
+                f'name {head["name"]}\n'
+                f'numpuls {i}\n'
+                f'tay {head["tay"]}\n'
+                f'flux\n\n'
+            ) # Добавление подписей колонок
 
             np.savetxt(fName, pulse, fmt='%1.3f', newline='\n', header=head_file, comments='')
             idx += 1
