@@ -1,9 +1,13 @@
+"""
+Выделение в отколиброванных данных импульсов пульсара в крабовидной туманности
+с использованием нейронной сети DINA.
+"""
+
 import os
 import sys
 import glob
 import datetime
 from copy import deepcopy
-import datetime
 import platform
 
 import matplotlib.pyplot as plt
@@ -48,18 +52,19 @@ sys.path.append(PACK_DIR)
 from PRAO import *
 
 
-loaded_model = joblib.load('dina_model_RFC(1000)_pulse_noise_95.sav')
+LOADED_MODEL = joblib.load('dina_model_RFC(1000)_pulse_noise_95.sav')
 
 
 def read_head(filename, numpar):
+    '''Function foe reading header information'''
     header = {}
     with open(filename, 'r') as file:
-        for i in range(numpar):
-            a, *b = file.readline().split()
+        for _ in range(numpar):
+            first_part, *second_part = file.readline().split()
             try:
-                header[a] = b[0] + '.' + b[1]
+                header[first_part] = second_part[0] + '.' + second_part[1]
             except IndexError:
-                header[a] = b[0].replace(',', '.')
+                header[first_part] = second_part[0].replace(',', '.')
     return header
 
 
@@ -98,7 +103,7 @@ idx = 0
 for name in tqdm(files_0531):
     head = read_head(name, 7)
     flat_obs = np.genfromtxt(name, skip_header=7)
-    day, month, year = data.split('.')
+    day, month, year = head['date'].split('.')
 
     sessons_obs.loc[idx] = [
         head['date'],
@@ -115,7 +120,7 @@ for name in tqdm(files_0531):
     while np.max(test_flat_obser) >= 1820:
         x_max = np.argmax(test_flat_obser)
         pulse = test_flat_obser[x_max - 25: x_max + 125] - med_flux
-        if len(pulse) == 0:
+        if not pulse:
             break
 
         n_pulse = pulse/max(pulse)
@@ -125,7 +130,7 @@ for name in tqdm(files_0531):
         else:
             n_pulse = np.append(n_pulse, np.zeros(150 - len(n_pulse)))
 
-        NN_decition = loaded_model.predict([n_pulse])
+        NN_decition = LOADED_MODEL.predict([n_pulse])
         if NN_decition[0] == 1:
 
             path_pulse = (
@@ -186,8 +191,8 @@ for name in tqdm(files_0531):
             medias = np.full(len(pulse), med_flux)
             test_flat_obser[x_max - 25: x_max + 125] = medias
 
-now = datetime.datetime.now().strftime("%Y-%m-%d")
-gp_crab.to_csv(f'crab_gp_kaz_10_2010-2019_calib_dina_{now}.csv',
+NOW = datetime.datetime.now().strftime("%Y-%m-%d")
+gp_crab.to_csv(f'crab_gp_kaz_10_2010-2019_calib_dina_{NOW}.csv',
                sep='\t', header=True, index=False)
-sessons_obs.to_csv(f'crab_obs_kaz_2010-2019_dina_{now}.csv',
+sessons_obs.to_csv(f'crab_obs_kaz_2010-2019_dina_{NOW}.csv',
                    sep='\t', header=True, index=False)
