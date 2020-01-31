@@ -143,7 +143,7 @@ for file_name in tqdm(main_set):
             ]
             
             cor_d = []
-            for data_point, coeff in zip(obser, poli/np.max(poli)):
+            for data_point, coeff in zip(obser, beam_coeff/np.max(beam_coeff)):
                 cor_d.append(data_point/coeff)
             cor_d = np.asarray(cor_d)
 
