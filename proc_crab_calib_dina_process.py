@@ -84,8 +84,8 @@ sessons_obs = pd.DataFrame(columns=[
 ])
 
 files_0531 = sorted(
-    glob.glob('./final_dataset/' + os.sep + 'obs_data_real_calib' + os.sep + '*'),
-    key=lambda x: datetime.datetime.strptime(os.path.basename(x), '%d.%m.%Y_obs_0531+21.csv'))
+    glob.glob(f'.{os.sep}obs_data_real_calib{os.sep}*'),
+    key=lambda x: datetime.datetime.strptime(os.path.basename(x), '%Y.%m.%d._obs_0531+21.csv'))
 
 idx = 0
 for name in tqdm(files_0531):
