@@ -91,6 +91,7 @@ idx = 0
 for name in tqdm(files_0531):
     head = read_head(name, 7)
     flat_obs = np.genfromtxt(name, skip_header=7)
+    day, month, year = data.split('.')
     
     sessons_obs.loc[idx] = [
         head['date'],
