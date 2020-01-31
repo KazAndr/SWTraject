@@ -82,7 +82,7 @@ sessons_obs = pd.DataFrame(columns=[
     'Session'
 ])
 
-beam_coeff = pd.DataFrame(columns=[
+beam_coeff_table = pd.DataFrame(columns=[
     'Date',
     'A',
     'shift',
@@ -134,7 +134,7 @@ for file_name in tqdm(main_set):
             obser = coeff*obser
             y0_back = popt[2]*coeff
             
-            beam_coeff.loc[idx_obs] = [
+            beam_coeff_table.loc[idx_obs] = [
                 head['date'],
                 popt[0],
                 popt[1],
@@ -207,4 +207,4 @@ for file_name in tqdm(main_set):
 
 sessons_obs.to_csv('crab_obs_kaz.csv',  sep='\t', header=True, index=False)
 
-beam_coeff.to_csv('beam_coeff_obs_kaz.csv',  sep='\t', header=True, index=False)
+beam_coeff_table.to_csv('beam_coeff_obs_kaz.csv',  sep='\t', header=True, index=False)
