@@ -170,13 +170,14 @@ for file_name in tqdm(main_set):
 
             fName = f'./obs_data_real_calib/{year}.{month}.{day}_obs_{head["name"]}.csv'
             head_file = (
-                f'name {head["name"]}'\n'
-                f'date {head["date"]}'\n'
-                f'time {head["time"]}'\n'
-                f'period {head["period"]}'\n'
-                f'numpuls {head["numpuls"]}'\n'
-                f'tay {head["tay"]}'\n'
-                f'numpointwin {int(head["l_point_win"]) + 1}'\n')
+                f'name {head["name"]}\n'
+                f'date {head["date"]}\n'
+                f'time {head["time"]}\n'
+                f'period {head["period"]}\n'
+                f'numpuls {head["numpuls"]}\n'
+                f'tay {head["tay"]}\n'
+                f'numpointwin {int(head["l_point_win"]) + 1}\n'
+            )
 
             np.savetxt(
                 fName,
