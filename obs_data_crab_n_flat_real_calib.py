@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 
 from tqdm import tqdm
 from scipy import signal
+from scipy.interpolate import interp1d
+from scipy.optimize import curve_fit, leastsq
 
 
 def flatter(data, polynomialOrder=15):
