@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from scipy import signal
 
+
 def flatter(data, polynomialOrder=15):
 
     ## Применяем медианную фильтрацию с максимальным шагом:
@@ -24,6 +25,15 @@ def flatter(data, polynomialOrder=15):
     yModel = np.polyval(fittedParameters, xModel)
 
     return yModel
+
+
+def sinxx(x):
+    return (np.sin(x)/x)**2
+
+
+def beam_obs(x, amp,  shift, y0):
+    return amp*(np.sin(x + shift)/(x + shift))**2 + y0
+
 
 if 'Windows' in platform.platform() and '8.1' in platform.release():
     _ = "C:\\Users\\Andrey\\YandexDisk\\3.Programing\\"
@@ -70,11 +80,12 @@ sessons_obs = pd.DataFrame(columns=[
     'Session'
 ])
 
-calib_coeff = pd.DataFrame(columns=[
+beam_coeff = pd.DataFrame(columns=[
     'Date',
-    'max',
-    'left_min',
-    'right_min',
+    'A',
+    'shift',
+    'y0',
+    'Jy/ADC'
 ])
 
 files_0531 = glob.glob(ALL_DATA + '0531+21'
@@ -102,20 +113,32 @@ for file_name in tqdm(main_set):
                 non_cor_data.append(pulse + backg)
             obser = np.hstack(non_cor_data)
 
+            fullpoints = int(head['numpuls'])*int(head['numpointwin'])
+            x = np.linspace(-1.37, 1.37, fullpoints)
+
+            obspoints = fullpoints - int(head['numpointwin'])
+            y = sinxx(x[:obspoints])
+
+            x = x[:obspoints]
             poli = flatter(obser, 4)
-            max_calib = max(poli[35000:45000])
-            min_calib = min(poli)
-            coeff = 860/(max_calib - min_calib)
+            max_calib = max(poli)
+            amp = max_calib
+            shift = 0
+            y0 = 50
+            popt,pcov = curve_fit(beam_obs,x,obser,p0=[amp,shift, y0])
+            
+            beam_coeff = beam_obs(x,*popt)
+            coeff = 1720/(amp - popt[2])
             obser = coeff*obser
+            y0_back = popt[2]*coeff
             
-            calib_coeff.loc[idx_obs] = [
-                    head['date'],
-                    max_calib,
-                    poli[0],
-                    poli[-1],
-                ]
-            
-            poli = flatter(obser, 4)
+            beam_coeff.loc[idx_obs] = [
+                head['date'],
+                popt[0],
+                popt[1],
+                popt[2],
+                coeff,
+            ]
             
             cor_d = []
             for data_point, coeff in zip(obser, poli/np.max(poli)):
@@ -124,7 +147,7 @@ for file_name in tqdm(main_set):
 
 
             poli_13 = flatter(cor_d, 13)
-            flat_obser = (cor_d - poli_13) + 1720 # Калибровка
+            flat_obser = (cor_d - poli_13) + np.median(cor_d)  # Калибровка
             med_flat_obser = np.median(flat_obser)
             # std_flat_obser = np.std(flat_obser)
 
@@ -136,7 +159,7 @@ for file_name in tqdm(main_set):
             plt.close()
             plt.subplot(311)
             plt.plot(obser)
-            plt.plot(poli)
+            plt.plot(beam_coeff)
             plt.subplot(312)
             plt.plot(cor_d)
             plt.plot(poli_13, color='r')
@@ -145,21 +168,6 @@ for file_name in tqdm(main_set):
             plt.axhline(med_flat_obser, color='r')
             # plt.axhline(med_flat_obser - 3*std_flat_obser, color='red')
             plt.savefig(fName_plot, format='png', dpi=100)
-
-            """
-            fName_hist =  './hist_plot/' + head['date'] + '_hist_'+ head['name'] + '.png'
-            bins = np.linspace(np.min(flat_obser), np.max(flat_obser), 1000)
-            plt.close()
-            plt.title('Distribution of pulses of Crab observation in ' + head['date'])
-            plt.xlabel('Flux density, ADC units')
-            plt.ylabel('Number of pulses')
-            plt.hist(flat_obser, bins)
-            plt.axvline(med_flat_obser, color='r')
-            plt.axvline(1800, color='red')
-            # plt.axvline(med_flat_obser - 3*std_flat_obser, color='red')
-            plt.savefig(fName_hist, format='png', dpi=100)
-            """
-
 
             fName = './obs_data_real_calib/' + head['date'] + '_obs_' + head['name'] + '.csv'
             head_file = (
@@ -195,8 +203,6 @@ for file_name in tqdm(main_set):
             f.write(os.path.basename(file_name))
             f.write('\n')
 
-sessons_obs.to_csv(
-        'crab' + '_obs_kaz.csv',  sep='\t', header=True, index=False)
+sessons_obs.to_csv('crab_obs_kaz.csv',  sep='\t', header=True, index=False)
 
-calib_coeff.to_csv(
-        'calib_coeff' + '_obs_kaz.csv',  sep='\t', header=True, index=False)
+beam_coeff.to_csv('beam_coeff_obs_kaz.csv',  sep='\t', header=True, index=False)
