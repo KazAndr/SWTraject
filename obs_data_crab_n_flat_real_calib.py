@@ -119,9 +119,10 @@ for file_name in tqdm(main_set):
             x = np.linspace(-1.37, 1.37, fullpoints)
 
             obspoints = fullpoints - int(head['numpointwin'])
+            
             y = sinxx(x[:obspoints])
-
             x = x[:obspoints]
+            
             poli = flatter(obser, 4)
             max_calib = max(poli)
             amp = max_calib
@@ -131,7 +132,7 @@ for file_name in tqdm(main_set):
             
             beam_coeff = beam_obs(x,*popt)
             coeff = 1720/(amp - popt[2])
-            obser = coeff*obser
+            obser_calib = coeff*obser
             y0_back = popt[2]*coeff
             
             beam_coeff_table.loc[idx_obs] = [
@@ -143,10 +144,10 @@ for file_name in tqdm(main_set):
             ]
             
             cor_d = []
-            for data_point, coeff in zip(obser, beam_coeff/np.max(beam_coeff)):
+            for data_point, coeff in zip(obser_calib, beam_coeff/np.max(beam_coeff)):
                 cor_d.append(data_point/coeff)
             cor_d = np.asarray(cor_d)
-
+            cor_d -= y0_back
 
             poli_13 = flatter(cor_d, 13)
             flat_obser = (cor_d - poli_13) + np.median(cor_d)  # Калибровка
