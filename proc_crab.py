@@ -13,7 +13,6 @@ import platform
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 
 from tqdm import tqdm
 
@@ -50,33 +49,8 @@ elif 'Linux' in platform.platform() and '4.4.0' in platform.release():
 else:
     print('unknown system', platform.platform(), platform.release())
 
-TEST_PIC = _ + 'test_pic'
 sys.path.append(PACK_DIR)
 from PRAO import *
-
-gp_crab = pd.DataFrame(columns=[
-    'Date', 
-    'Time start', 
-    'Tay, ms',
-    'Period, s',
-    'Numpointwin, point',
-    'Numpulse, a.u.',
-    'Median, adc u',
-    'STD, adc u',
-    'path obs plot',
-    'path obs data',
-    'Count of GP, u',
-    'point of gp, point',
-    'amp of gp, adc u',
-    'W50, point',
-    'W10, point',
-    'path plot',
-    
-])
-
-files_0531 = sorted(
-    glob.glob('.\\obs_data\\*'), 
-    key=lambda x: datetime.datetime.strptime(os.path.basename(x), '%d.%m.%Y_obs_0531+21.csv'))
 
 def read_head(filename, numpar):
     header = {}
@@ -89,43 +63,38 @@ def read_head(filename, numpar):
                 header[a] = b[0].replace(',', '.')
     return header
 
-idx = 0
+files_0531 = sorted(
+    glob.glob(f'.{os.sep}obs_data_real_calib{os.sep}*'),
+    key=lambda x: datetime.datetime.strptime(os.path.basename(x),
+                                             '%Y.%m.%d_obs_0531+21.csv')
+)
+
 for name in tqdm(files_0531):
     head = read_head(name, 7)
+    day, month, year = head['date'].split('.')
     flat_obs = np.genfromtxt(name, skip_header=7)
     med_flux = np.median(flat_obs)
     std_obs = np.std(flat_obs)
     
-    fName_plot =  './obs_plot/' + head['date'] + '_plot_'+ head['name'] + '.png'
-    plt.close()
-    plt.plot(flat_obs) #[24150:24300]
-    plt.axhline(med_flux, color='r')
-    plt.axhline(med_flux + 10*std_obs, color='red')
-    plt.axhline(med_flux - 3*std_obs, color='red')
-    plt.savefig(fName_plot, format='png', dpi=100)
-    
-    fName_hist =  './hist_plot/' + head['date'] + '_hist_'+ head['name'] + '.png'
-    bins = np.linspace(np.min(flat_obs), np.max(flat_obs), 1000)
-    plt.close()
-    plt.title('Distribution of pulses of Crab observation in ' + head['date'])
-    plt.xlabel('Flux density, ADC units')
-    plt.ylabel('Number of pulses')
-    plt.hist(flat_obs, bins)
-    plt.axvline(med_flux, color='r')
-    plt.axvline(med_flux + 10*std_obs, color='red')
-    plt.axvline(med_flux - 3*std_obs, color='red')
-    plt.savefig(fName_hist, format='png', dpi=100)
-    
-    # ploting and writing session of observation
     test_flat_obser = deepcopy(flat_obs)
     
     i = 0
     
     while np.max(test_flat_obser) >= (10*std_obs + med_flux):
         x_max = np.argmax(test_flat_obser)
-        pulse = test_flat_obser[x_max - 10: x_max + 90] - med_flux
+        pulse = test_flat_obser[x_max - 25: x_max + 125] - med_flux
         
-        path_pulse = './gp_plot/' + head['date'] + '_plot_'+ head['name'] + '_'+ str(i)  + '.png'
+        path_pulse = (
+                f'./results_set/plot_untypized/'
+                f'{year}.{month}.{day}_plot_{head["name"]}_{i}.png'
+            )
+        
+        fName = (
+                f'./results_set/file_untypized/'
+                f'{year}.{month}.{day}_plot_{head["name"]}_{i}.csv'
+            )
+        
+        
         plt.close()
         plt.title('Session of observation of Crab in ' + head['date'] + ' ' + '№' + str(i))
         plt.xlabel('Number of point, dt = ' + head['tay']  + ' ' + 'ms')
@@ -133,33 +102,17 @@ for name in tqdm(files_0531):
         plt.plot(pulse)
         plt.savefig(path_pulse, format='png', dpi=100)
         
-        i += 1
-        
-        w10, _, _ =  width_of_pulse(pulse, 0.1)
-        w50, _, _ = width_of_pulse(pulse, 0.5)
-        amp = max(pulse)
-        medias = np.full(len(pulse), med_flux)
-        test_flat_obser[x_max - 10: x_max + 90] = medias
-        
-        gp_crab.loc[idx] = [
-            head['date'],
-            head['time'],
-            head['tay'],
-            head['period'],
-            head['numpointwin'],
-            head['numpuls'],
-            med_flux,
-            std_obs,
-            fName_plot,
-            name,
-            1,
-            x_max,
-            amp,
-            w50,
-            w10,
-            path_pulse
-        ]
-        
-        idx += 1
+        head_file = (
+                f'name {head["name"]}\n'
+                f'numpuls {i}\n'
+                f'tay {head["tay"]}\n'
+                f'flux\n\n'
+            )  # Добавление подписей колонок
 
-gp_crab.to_csv('crab_gp_kaz_10_2010-2018.csv',  sep='\t', header=True, index=False)
+        np.savetxt(fName, pulse, fmt='%1.3f',
+                   newline='\n', header=head_file, comments='')
+        
+       
+        test_flat_obser[x_max - 25: x_max + 125] = np.full(len(pulse), med_flux)
+        
+        i += 1
