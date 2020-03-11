@@ -52,7 +52,7 @@ sys.path.append(PACK_DIR)
 from PRAO import *
 
 
-LOADED_MODEL = joblib.load('dina_model_RFC(1000)_pulse_noise_95.sav')
+LOADED_MODEL = joblib.load('dina_model_RFC(1000)_megaset_2020-03-11.sav')
 
 
 def read_head(filename, numpar):
@@ -99,17 +99,18 @@ files_0531 = sorted(
                                              '%Y.%m.%d_obs_0531+21.csv')
 )
 
-idx = 0
+idx_ses = 0
+idx_tab = 0
 for name in tqdm(files_0531):
     head = read_head(name, 7)
     flat_obs = np.genfromtxt(name, skip_header=7)
     day, month, year = head['date'].split('.')
 
-    sessons_obs.loc[idx] = [
+    sessons_obs.loc[idx_ses] = [
         head['date'],
         1
     ]
-    idx += 1
+    idx_ses += 1
 
     test_flat_obser = deepcopy(flat_obs)
     med_flux = np.median(test_flat_obser)
@@ -117,7 +118,7 @@ for name in tqdm(files_0531):
 
     i = 0
 
-    while np.max(test_flat_obser) >= 1820:
+    while np.max(test_flat_obser) >= (4*std_obs + med_flux):
         x_max = np.argmax(test_flat_obser)
         pulse = test_flat_obser[x_max - 25: x_max + 125] - med_flux
         if len(pulse) == 0:
@@ -134,9 +135,14 @@ for name in tqdm(files_0531):
         if NN_decition[0] == 1:
 
             path_pulse = (
-                f'./final_dataset/gp_plot_real_calib/'
+                f'./results_set/dina_results/plots/'
                 f'{year}.{month}.{day}_plot_{head["name"]}_{i}.png'
             )
+            fName = (
+                f'./results_set/dina_results/files/'
+                f'{year}.{month}.{day}_plot_{head["name"]}_{i}.csv'
+            )
+            
             plt.close()
             plt.title(f'Session of observation of Crab in {head["date"]} №{i}')
             plt.xlabel(f'Number of point, dt = {head["tay"]} ms')
@@ -144,8 +150,17 @@ for name in tqdm(files_0531):
             plt.plot(pulse)
             plt.savefig(path_pulse, format='png', dpi=50)
 
-            i += 1
+            
+            head_file = (
+                f'name {head["name"]}\n'
+                f'numpuls {i}\n'
+                f'tay {head["tay"]}\n'
+                f'flux\n\n'
+            )  # Добавление подписей колонок
 
+            np.savetxt(fName, pulse, fmt='%1.3f',
+                       newline='\n', header=head_file, comments='')
+            
             w10, _, _ = width_of_pulse(pulse, 0.1)
             w50, _, _ = width_of_pulse(pulse, 0.5)
 
@@ -153,12 +168,8 @@ for name in tqdm(files_0531):
             medias = np.full(len(pulse), med_flux)
             test_flat_obser[x_max - 25:x_max + 125] = medias
 
-            fName = (
-                f'./final_dataset/gp_plot_txt_real_calib/'
-                f'{year}.{month}.{day}_plot_{head["name"]}_{i}.csv'
-            )
-
-            gp_crab.loc[idx] = [
+           
+            gp_crab.loc[idx_tab] = [
                 head['date'],
                 head['time'],
                 head['tay'],
@@ -177,16 +188,8 @@ for name in tqdm(files_0531):
                 fName,
             ]
 
-            head_file = (
-                f'name {head["name"]}\n'
-                f'numpuls {i}\n'
-                f'tay {head["tay"]}\n'
-                f'flux\n\n'
-            )  # Добавление подписей колонок
-
-            np.savetxt(fName, pulse, fmt='%1.3f',
-                       newline='\n', header=head_file, comments='')
-            idx += 1
+            idx_tab += 1
+            i += 1
         else:
             medias = np.full(len(pulse), med_flux)
             test_flat_obser[x_max - 25: x_max + 125] = medias
